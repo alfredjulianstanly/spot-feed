@@ -15,6 +15,17 @@ use crate::{
 };
 
 /// Register a new user
+#[utoipa::path(
+    post,
+    path = "/api/v1/auth/register",
+    request_body = RegisterRequest,
+    responses(
+        (status = 201, description = "User registered successfully", body = RegisterResponse),
+        (status = 400, description = "Invalid input or user already exists"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Authentication"
+)]
 pub async fn register(
     State(state): State<AppState>,
     Json(payload): Json<RegisterRequest>,
@@ -97,6 +108,18 @@ pub async fn register(
 }
 
 /// Verify OTP code
+#[utoipa::path(
+    post,
+    path = "/api/v1/auth/verify-otp",
+    request_body = VerifyOtpRequest,
+    responses(
+        (status = 200, description = "Email verified successfully", body = VerifyOtpResponse),
+        (status = 400, description = "Invalid or expired OTP"),
+        (status = 404, description = "User not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Authentication"
+)]
 pub async fn verify_otp(
     State(state): State<AppState>,
     Json(payload): Json<VerifyOtpRequest>,
@@ -150,6 +173,18 @@ pub async fn verify_otp(
 }
 
 /// User login
+#[utoipa::path(
+    post,
+    path = "/api/v1/auth/login",
+    request_body = LoginRequest,
+    responses(
+        (status = 200, description = "Login successful", body = LoginResponse),
+        (status = 401, description = "Invalid credentials"),
+        (status = 400, description = "Email not verified"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Authentication"
+)]
 pub async fn login(
     State(state): State<AppState>,
     Json(payload): Json<LoginRequest>,

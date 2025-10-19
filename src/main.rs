@@ -3,12 +3,48 @@ mod errors;
 mod models;
 mod utils;
 
-use crate::api::auth::{login, register, verify_otp};
-use crate::models::app_state::AppState;
 use axum::{extract::State, routing::get, Json, Router};
 use serde_json::{json, Value};
 use shuttle_axum::ShuttleAxum;
 use sqlx::postgres::PgPoolOptions;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
+
+use crate::api::auth::{login, register, verify_otp};
+use crate::models::app_state::AppState;
+
+/// API Documentation
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        crate::api::auth::register,
+        crate::api::auth::verify_otp,
+        crate::api::auth::login,
+    ),
+    components(
+        schemas(
+            crate::models::user::RegisterRequest,
+            crate::models::user::RegisterResponse,
+            crate::models::user::VerifyOtpRequest,
+            crate::models::user::VerifyOtpResponse,
+            crate::models::user::LoginRequest,
+            crate::models::user::LoginResponse,
+        )
+    ),
+    tags(
+        (name = "Authentication", description = "User authentication endpoints")
+    ),
+    info(
+        title = "Spot Feed API",
+        version = "0.1.0",
+        description = "Location-based social networking API",
+        contact(
+            name = "Spot Feed Team",
+            email = "support@spotfeed.com"
+        )
+    )
+)]
+struct ApiDoc;
 
 async fn hello_world() -> &'static str {
     "Hello from Spot Feed! 🚀"
@@ -47,8 +83,10 @@ async fn main(#[shuttle_shared_db::Postgres] conn_str: String) -> ShuttleAxum {
         .route("/api/health", get(health_check))
         // Authentication routes
         .route("/api/v1/auth/register", axum::routing::post(register))
-        .route("/api/v1/auth/verify_otp", axum::routing::post(verify_otp))
+        .route("/api/v1/auth/verify-otp", axum::routing::post(verify_otp))
         .route("/api/v1/auth/login", axum::routing::post(login))
+        // Swagger UI
+        .merge(SwaggerUi::new("/api/docs").url("/api/openapi.json", ApiDoc::openapi()))
         .with_state(state);
 
     Ok(router.into())
