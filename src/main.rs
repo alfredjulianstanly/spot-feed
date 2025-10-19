@@ -4,6 +4,7 @@ use shuttle_axum::ShuttleAxum;
 use sqlx::{postgres::PgPoolOptions, PgPool};
 
 mod errors;
+mod utils;
 
 #[derive(Clone)]
 struct AppState {
