@@ -4,3 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+axum = "0.8.6"
+shuttle-axum = "0.57.0"
+shuttle-runtime = "0.57.0"
+shuttle-shared-db = { version = "0.57.0", features = ["postgres"] }
+sqlx = { version = "0.8.6", features = ["runtime-tokio-rustls", "postgres", "migrate"] }
