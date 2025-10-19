@@ -3,6 +3,8 @@ use serde_json::{json, Value};
 use shuttle_axum::ShuttleAxum;
 use sqlx::{postgres::PgPoolOptions, PgPool};
 
+mod errors;
+
 #[derive(Clone)]
 struct AppState {
     db: PgPool,
