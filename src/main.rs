@@ -1,12 +1,14 @@
+mod api;
 mod errors;
 mod models;
 mod utils;
 
+use crate::api::auth::{login, register, verify_otp};
 use crate::models::app_state::AppState;
 use axum::{extract::State, routing::get, Json, Router};
 use serde_json::{json, Value};
 use shuttle_axum::ShuttleAxum;
-use sqlx::{postgres::PgPoolOptions, PgPool};
+use sqlx::postgres::PgPoolOptions;
 
 async fn hello_world() -> &'static str {
     "Hello from Spot Feed! 🚀"
@@ -42,7 +44,11 @@ async fn main(#[shuttle_shared_db::Postgres] conn_str: String) -> ShuttleAxum {
 
     let router = Router::new()
         .route("/", get(hello_world))
-        .route("/health", get(health_check))
+        .route("/api/health", get(health_check))
+        // Authentication routes
+        .route("/api/v1/auth/register", axum::routing::post(register))
+        .route("/api/v1/auth/verify_otp", axum::routing::post(verify_otp))
+        .route("/api/v1/auth/login", axum::routing::post(login))
         .with_state(state);
 
     Ok(router.into())
