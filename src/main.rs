@@ -1,15 +1,12 @@
+mod errors;
+mod models;
+mod utils;
+
+use crate::models::app_state::AppState;
 use axum::{extract::State, routing::get, Json, Router};
 use serde_json::{json, Value};
 use shuttle_axum::ShuttleAxum;
 use sqlx::{postgres::PgPoolOptions, PgPool};
-
-mod errors;
-mod utils;
-
-#[derive(Clone)]
-struct AppState {
-    db: PgPool,
-}
 
 async fn hello_world() -> &'static str {
     "Hello from Spot Feed! 🚀"
@@ -41,7 +38,7 @@ async fn main(#[shuttle_shared_db::Postgres] conn_str: String) -> ShuttleAxum {
         .await
         .expect("Failed to connect to database");
 
-    let state = AppState { db };
+    let state = AppState::new(db);
 
     let router = Router::new()
         .route("/", get(hello_world))
