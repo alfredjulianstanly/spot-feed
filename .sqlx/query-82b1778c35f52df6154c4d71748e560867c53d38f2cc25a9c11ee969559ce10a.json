@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO joint_members (joint_id, user_id, role)\n        VALUES ($1, $2, 'member')\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "82b1778c35f52df6154c4d71748e560867c53d38f2cc25a9c11ee969559ce10a"
+}

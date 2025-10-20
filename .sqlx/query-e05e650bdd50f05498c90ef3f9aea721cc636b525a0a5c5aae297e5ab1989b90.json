@@ -1,0 +1,88 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, name, creator_id, joint_type, visibility, latitude, longitude, radius, created_at, expires_at, description, is_active FROM joints WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "creator_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "joint_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "visibility",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "latitude",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "longitude",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 7,
+        "name": "radius",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "expires_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
+        "name": "is_active",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "e05e650bdd50f05498c90ef3f9aea721cc636b525a0a5c5aae297e5ab1989b90"
+}

@@ -11,6 +11,7 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::api::auth::{login, register, verify_otp};
+use crate::api::joints::{create_joint, join_joint, list_nearby_joints};
 use crate::models::app_state::AppState;
 
 /// API Documentation
@@ -20,6 +21,9 @@ use crate::models::app_state::AppState;
         crate::api::auth::register,
         crate::api::auth::verify_otp,
         crate::api::auth::login,
+        crate::api::joints::create_joint,           
+        crate::api::joints::list_nearby_joints,   
+        crate::api::joints::join_joint,            
     ),
     components(
         schemas(
@@ -29,10 +33,19 @@ use crate::models::app_state::AppState;
             crate::models::user::VerifyOtpResponse,
             crate::models::user::LoginRequest,
             crate::models::user::LoginResponse,
+            crate::models::joint::CreateJointRequest,      
+            crate::models::joint::CreateJointResponse,    
+            crate::models::joint::ListJointsRequest,     
+            crate::models::joint::ListJointsResponse,   
+            crate::models::joint::JoinJointRequest,    
+            crate::models::joint::JoinJointResponse,  
+            crate::models::joint::Joint,             
+            crate::models::joint::JointWithDistance,
         )
     ),
     tags(
-        (name = "Authentication", description = "User authentication endpoints")
+        (name = "Authentication", description = "User authentication endpoints"),
+        (name = "Joints", description = "Location-based group endpoints")
     ),
     info(
         title = "Spot Feed API",
@@ -85,6 +98,12 @@ async fn main(#[shuttle_shared_db::Postgres] conn_str: String) -> ShuttleAxum {
         .route("/api/v1/auth/register", axum::routing::post(register))
         .route("/api/v1/auth/verify-otp", axum::routing::post(verify_otp))
         .route("/api/v1/auth/login", axum::routing::post(login))
+
+        // Joints routes
+        .route("/api/v1/joints", axum::routing::post(create_joint))
+        .route("/api/v1/joints/nearby", axum::routing::post(list_nearby_joints))
+        .route("/api/v1/joints/join", axum::routing::post(join_joint))
+
         // Swagger UI
         .merge(SwaggerUi::new("/api/docs").url("/api/openapi.json", ApiDoc::openapi()))
         .with_state(state);

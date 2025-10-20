@@ -1,0 +1,102 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        WITH distances AS (\n            SELECT \n                j.*,\n                (6371000 * acos(\n                    cos(radians($1)) * cos(radians(j.latitude)) *\n                    cos(radians(j.longitude) - radians($2)) +\n                    sin(radians($1)) * sin(radians(j.latitude))\n                )) as distance_meters,\n                COUNT(jm.id) as member_count\n            FROM joints j\n            LEFT JOIN joint_members jm ON j.id = jm.joint_id\n            WHERE j.is_active = true\n            AND (j.expires_at IS NULL OR j.expires_at > NOW())\n            GROUP BY j.id\n        )\n        SELECT \n            id, name, description, latitude, longitude, radius, \n            is_active, expires_at, creator_id, created_at, joint_type, visibility,\n            distance_meters, member_count\n        FROM distances\n        WHERE distance_meters <= $3\n        ORDER BY distance_meters ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "latitude",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "longitude",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 5,
+        "name": "radius",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "expires_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "creator_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "joint_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "visibility",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 12,
+        "name": "distance_meters",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 13,
+        "name": "member_count",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Float8",
+        "Float8",
+        "Float8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "4f053d713988646406233c0a670f8f51c2d69fb906c61695883e69546e28942a"
+}
