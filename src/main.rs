@@ -85,14 +85,23 @@ async fn health_check(State(state): State<AppState>) -> Json<Value> {
 }
 
 #[shuttle_runtime::main]
-async fn main(#[shuttle_shared_db::Postgres] conn_str: String) -> ShuttleAxum {
+async fn main(
+#[shuttle_shared_db::Postgres] conn_str: String,
+#[shuttle_runtime::Secrets] secrets: shuttle_runtime::SecretStore,
+    ) -> ShuttleAxum {
+    
+    // Get Resend API key from secrets
+    let resend_api_key = secrets
+        .get("RESEND_API_KEY")
+        .expect("RESEND_API_KEY must be set in Secrets.toml");
+
     let db = PgPoolOptions::new()
         .max_connections(5)
         .connect(&conn_str)
         .await
         .expect("Failed to connect to database");
 
-    let state = AppState::new(db);
+    let state = AppState::new(db, resend_api_key);
 
     // Protected routes that require authentication
     let protected_routes = Router::new()

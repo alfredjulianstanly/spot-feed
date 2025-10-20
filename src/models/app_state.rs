@@ -4,10 +4,11 @@ use sqlx::PgPool;
 #[derive(Clone)]
 pub struct AppState {
     pub db: PgPool,
+    pub resend_api_key: String,
 }
 
 impl AppState {
-    pub fn new(db: PgPool) -> Self {
-        Self { db }
+    pub fn new(db: PgPool, resend_api_key: String) -> Self {
+        Self { db, resend_api_key }
     }
 }

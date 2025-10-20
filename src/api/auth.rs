@@ -92,8 +92,10 @@ pub async fn register(
     .execute(&state.db)
     .await?;
 
-    // TODO: Send OTP via email (we'll implement this later)
-    tracing::info!("OTP for {}: {}", payload.email, otp_code);
+    // Send OTP via email
+    crate::utils::email::send_otp_email(&payload.email, &otp_code, &state.resend_api_key).await?;
+
+    tracing::info!("OTP sent to {}", payload.email);
 
     Ok((
         StatusCode::CREATED,
