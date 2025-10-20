@@ -2,8 +2,10 @@ mod api;
 mod errors;
 mod models;
 mod utils;
+mod middleware;
 
-use axum::{extract::State, routing::get, Json, Router};
+use axum::{extract::State, middleware as axum_middleware, routing::get, Json, Router};   
+
 use serde_json::{json, Value};
 use shuttle_axum::ShuttleAxum;
 use sqlx::postgres::PgPoolOptions;
@@ -12,6 +14,7 @@ use utoipa_swagger_ui::SwaggerUi;
 
 use crate::api::auth::{login, register, verify_otp};
 use crate::api::joints::{create_joint, join_joint, list_nearby_joints};
+use crate::middleware::auth::auth_middleware;
 use crate::models::app_state::AppState;
 
 /// API Documentation
@@ -91,22 +94,33 @@ async fn main(#[shuttle_shared_db::Postgres] conn_str: String) -> ShuttleAxum {
 
     let state = AppState::new(db);
 
-    let router = Router::new()
+    // Protected routes that require authentication
+    let protected_routes = Router::new()
+        .route("/api/v1/joints", axum::routing::post(create_joint))
+        .route("/api/v1/joints/join", axum::routing::post(join_joint))
+        .route_layer(axum_middleware::from_fn_with_state(
+            state.clone(),
+            auth_middleware,
+        ));
+
+     // Public routes
+    let public_routes = Router::new()
         .route("/", get(hello_world))
         .route("/api/health", get(health_check))
         // Authentication routes
         .route("/api/v1/auth/register", axum::routing::post(register))
         .route("/api/v1/auth/verify-otp", axum::routing::post(verify_otp))
         .route("/api/v1/auth/login", axum::routing::post(login))
+        // Public joints routes
+        .route("/api/v1/joints/nearby", axum::routing::post(list_nearby_joints));
 
-        // Joints routes
-        .route("/api/v1/joints", axum::routing::post(create_joint))
-        .route("/api/v1/joints/nearby", axum::routing::post(list_nearby_joints))
-        .route("/api/v1/joints/join", axum::routing::post(join_joint))
 
+    let router = Router::new()
+        .merge(protected_routes)
+        .merge(public_routes)
         // Swagger UI
         .merge(SwaggerUi::new("/api/docs").url("/api/openapi.json", ApiDoc::openapi()))
         .with_state(state);
-
-    Ok(router.into())
+    
+       Ok(router.into())
 }
