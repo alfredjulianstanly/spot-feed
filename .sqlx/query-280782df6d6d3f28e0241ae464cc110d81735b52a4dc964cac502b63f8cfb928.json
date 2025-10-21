@@ -1,0 +1,94 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            j.id, j.name, j.description, j.latitude, j.longitude, j.radius,\n            j.expires_at, j.creator_id, j.created_at, j.joint_type, j.visibility, j.is_active,\n            COUNT(jm.id) as member_count\n        FROM joints j\n        INNER JOIN joint_members jm_user ON j.id = jm_user.joint_id AND jm_user.user_id = $1\n        LEFT JOIN joint_members jm ON j.id = jm.joint_id\n        WHERE j.expires_at > NOW()\n        AND (j.is_active IS NULL OR j.is_active = true)\n        GROUP BY j.id\n        ORDER BY j.created_at DESC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "latitude",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "longitude",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 5,
+        "name": "radius",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "expires_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "creator_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "joint_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 10,
+        "name": "visibility",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 12,
+        "name": "member_count",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "280782df6d6d3f28e0241ae464cc110d81735b52a4dc964cac502b63f8cfb928"
+}

@@ -1,4 +1,4 @@
-use axum::{extract::State, http::StatusCode, Extension, Json};
+use axum::{Extension, Json, extract::State, http::StatusCode};
 use uuid::Uuid;
 use validator::Validate;
 
@@ -230,5 +230,125 @@ pub async fn join_joint(
     Ok(Json(JoinJointResponse {
         message: "Successfully joined the joint!".to_string(),
         joined: true,
+    }))
+}
+
+/// Get user's active joints
+#[utoipa::path(
+    get,
+    path = "/api/v1/joints/active",
+    responses(
+        (status = 200, description = "List of user's active joints", body = ListJointsResponse),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Joints",
+    security(("bearer" = []))
+)]
+pub async fn get_active_joints(
+    State(state): State<AppState>,
+    Extension(user_id): Extension<Uuid>,
+) -> Result<Json<ListJointsResponse>, AppError> {
+    let joints = sqlx::query!(
+        r#"
+        SELECT
+            j.id, j.name, j.description, j.latitude, j.longitude, j.radius,
+            j.expires_at, j.creator_id, j.created_at, j.joint_type, j.visibility, j.is_active,
+            COUNT(jm.id) as member_count
+        FROM joints j
+        INNER JOIN joint_members jm_user ON j.id = jm_user.joint_id AND jm_user.user_id = $1
+        LEFT JOIN joint_members jm ON j.id = jm.joint_id
+        WHERE j.expires_at > NOW()
+        AND (j.is_active IS NULL OR j.is_active = true)
+        GROUP BY j.id
+        ORDER BY j.created_at DESC
+        "#,
+        user_id
+    )
+    .fetch_all(&state.db)
+    .await?;
+
+    let joints_with_distance: Vec<JointWithDistance> = joints
+        .into_iter()
+        .map(|row| JointWithDistance {
+            joint: Joint {
+                id: row.id,
+                name: row.name,
+                creator_id: row.creator_id,
+                joint_type: row.joint_type,
+                visibility: row.visibility,
+                latitude: row.latitude,
+                longitude: row.longitude,
+                radius: row.radius,
+                created_at: row.created_at,
+                expires_at: Some(row.expires_at),
+                description: row.description,
+                is_active: Some(row.is_active),
+            },
+            distance_meters: 0.0, // Not relevant for active joints
+            member_count: row.member_count.unwrap_or(0),
+        })
+        .collect();
+
+    let count = joints_with_distance.len();
+
+    Ok(Json(ListJointsResponse {
+        joints: joints_with_distance,
+        count,
+    }))
+}
+
+/// Leave a joint
+#[utoipa::path(
+    post,
+    path = "/api/v1/joints/leave",
+    request_body = JoinJointRequest,
+    responses(
+        (status = 200, description = "Successfully left joint", body = JoinJointResponse),
+        (status = 400, description = "Invalid input or not a member"),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "Joint not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Joints",
+    security(("bearer" = []))
+)]
+pub async fn leave_joint(
+    State(state): State<AppState>,
+    Extension(user_id): Extension<Uuid>,
+    Json(payload): Json<JoinJointRequest>,
+) -> Result<Json<JoinJointResponse>, AppError> {
+    // Check if user is a member
+    let member = sqlx::query!(
+        "SELECT id, role FROM joint_members WHERE joint_id = $1 AND user_id = $2",
+        payload.joint_id,
+        user_id
+    )
+    .fetch_optional(&state.db)
+    .await?
+    .ok_or(AppError::ValidationError(
+        "You are not a member of this joint".to_string(),
+    ))?;
+
+    // If user is creator, they cannot leave (must transfer admin or delete joint)
+    if member.role == "creator" {
+        return Err(AppError::ValidationError(
+            "Creators cannot leave joints. Please transfer admin rights or delete the joint."
+                .to_string(),
+        ));
+    }
+
+    // Remove user from joint
+    sqlx::query!(
+        "DELETE FROM joint_members WHERE joint_id = $1 AND user_id = $2",
+        payload.joint_id,
+        user_id
+    )
+    .execute(&state.db)
+    .await?;
+
+    Ok(Json(JoinJointResponse {
+        message: "Successfully left the joint!".to_string(),
+        joined: false,
     }))
 }

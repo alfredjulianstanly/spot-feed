@@ -1,7 +1,7 @@
 // src/middleware/auth.rs
 use axum::{
     extract::{Request, State},
-    http::{header, StatusCode},
+    http::{StatusCode, header},
     middleware::Next,
     response::Response,
 };

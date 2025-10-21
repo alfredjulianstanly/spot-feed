@@ -1,5 +1,5 @@
 use crate::errors::AppError;
-use resend_rs::{types::CreateEmailBaseOptions, Resend};
+use resend_rs::{Resend, types::CreateEmailBaseOptions};
 
 /// Send OTP email via Resend
 pub async fn send_otp_email(
