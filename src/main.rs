@@ -3,6 +3,7 @@ mod errors;
 mod middleware;
 mod models;
 mod utils;
+mod ws;
 
 use axum::{Json, Router, extract::State, middleware as axum_middleware, routing::get};
 
@@ -18,7 +19,9 @@ use crate::api::joints::{
 };
 use crate::api::profile::{get_profile, update_profile};
 use crate::middleware::auth::auth_middleware;
+use crate::middleware::ws_auth::ws_auth_middleware;
 use crate::models::app_state::AppState;
+use crate::ws::handler::websocket_handler;
 
 /// API Documentation
 #[derive(OpenApi)]
@@ -121,12 +124,20 @@ async fn main(
             axum::routing::get(get_active_joints),
         ) // ADD
         .route("/api/v1/joints/join", axum::routing::post(join_joint))
-        .route("/api/v1/joints/leave", axum::routing::post(leave_joint)) 
-        .route("/api/v1/profile", axum::routing::get(get_profile)) 
-        .route("/api/v1/profile", axum::routing::put(update_profile)) 
+        .route("/api/v1/joints/leave", axum::routing::post(leave_joint))
+        .route("/api/v1/profile", axum::routing::get(get_profile))
+        .route("/api/v1/profile", axum::routing::put(update_profile))
         .route_layer(axum_middleware::from_fn_with_state(
             state.clone(),
             auth_middleware,
+        ));
+
+    // WebSocket routes (separate auth middleware)
+    let ws_routes = Router::new()
+        .route("/ws/joint/:joint_id", axum::routing::get(websocket_handler))
+        .route_layer(axum_middleware::from_fn_with_state(
+            state.clone(),
+            ws_auth_middleware,
         ));
 
     // Public routes
@@ -144,6 +155,7 @@ async fn main(
         );
 
     let router = Router::new()
+        .merge(ws_routes)
         .merge(protected_routes)
         .merge(public_routes)
         // Swagger UI
