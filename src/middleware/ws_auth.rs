@@ -1,38 +1,30 @@
+// src/middleware/ws_auth.rs
 use axum::{
-    extract::{Path, Request, State},
-    http::header,
+    extract::{Path, Query, Request, State},
     middleware::Next,
     response::Response,
 };
+use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::{errors::AppError, models::app_state::AppState, utils::jwt::verify_token};
 
-/// WebSocket authentication middleware - extracts user info and joint_id
+#[derive(Deserialize)]
+pub struct WsQuery {
+    token: String,
+}
+
+/// WebSocket authentication middleware - extracts user info and joint_id from query param
 pub async fn ws_auth_middleware(
     State(state): State<AppState>,
     Path(joint_id): Path<Uuid>,
+    Query(query): Query<WsQuery>,
     mut req: Request,
     next: Next,
 ) -> Result<Response, AppError> {
-    // Get Authorization header
-    let auth_header = req
-        .headers()
-        .get(header::AUTHORIZATION)
-        .and_then(|h| h.to_str().ok())
-        .ok_or(AppError::Unauthorized)?;
-
-    // Check if it starts with "Bearer "
-    if !auth_header.starts_with("Bearer ") {
-        return Err(AppError::Unauthorized);
-    }
-
-    // Extract token
-    let token = auth_header.trim_start_matches("Bearer ");
-
-    // Verify token
+    // Verify token from query parameter
     let jwt_secret = "your-super-secret-jwt-key-change-in-production";
-    let claims = verify_token(token, jwt_secret)?;
+    let claims = verify_token(&query.token, jwt_secret)?;
 
     // Parse user_id from claims
     let user_id = Uuid::parse_str(&claims.sub).map_err(|_| AppError::InvalidToken)?;
